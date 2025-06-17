@@ -211,6 +211,3 @@ with col2:
 
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-else:
-    st.info("No T-Bills data available. Please ensure the Excel file is present and correct.")
-

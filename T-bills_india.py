@@ -284,8 +284,7 @@ if not tbill_data_df.empty:
     heatmap_df[tenor_cols],
     labels=dict(x="Tenor", y="Period", color="Yield (%)"),
     aspect="auto",
-    color_continuous_scale='RdBu_r'
-)
+    color_continuous_scale='RdBu_r')
 
         fig_heatmap.update_layout(
             title={

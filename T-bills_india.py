@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+#import plotly.graph_objects as go
 
 
 # 1. Page config - MUST be the very first Streamlit command

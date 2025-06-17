@@ -173,41 +173,49 @@ if not df.empty:
         st.plotly_chart(fig3d, use_container_width=True)
 
 with col2:
-    st.write("### T-Bill Yield Heatmap (Interactive)")
+    st.write("### T-Bill Yield Heatmap")
+
     heatmap_df = tbill_data_df.copy()
     heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
     heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
-    heatmap_df.set_index(period_column_name, inplace=True)
-    if 'Period_Datetime' in heatmap_df.columns:
-        heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-    fig_heatmap = px.imshow(
-        heatmap_df[tenor_cols],
-        labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-        x=tenor_cols,
-        y=heatmap_df.index.tolist(),
-        color_continuous_scale="RdBu_r",
-        aspect="auto"
+    heatmap_long_df = heatmap_df.melt(
+        id_vars=[period_column_name, 'Period_Datetime'],
+        value_vars=tenor_cols,
+        var_name='Tenor',
+        value_name='Yield'
+    )
+
+    fig_heatmap = px.density_heatmap(
+        heatmap_long_df,
+        x='Tenor',
+        y=period_column_name,
+        z='Yield',
+        color_continuous_scale='RdBu_r',
+        text_auto='.2f',
+        hover_name='Tenor',
+        hover_data={
+            'Yield': ':.2f',
+            period_column_name: True,
+            'Tenor': False
+        }
     )
 
     fig_heatmap.update_layout(
-        title=dict(
-            text="T-Bill Yield Heatmap",
-            font=dict(size=20, color='#1a4d7c'),
-            x=0.5,
-            xanchor='center'
-        ),
-        font=dict(family="Arial", size=12),
-        xaxis=dict(tickangle=45, tickfont=dict(color='#1a4d7c')),
-        yaxis=dict(tickfont=dict(color='#1a4d7c')),
-        coloraxis_colorbar=dict(
-            title='Yield (%)',
-            titlefont=dict(color='#1a4d7c'),
-            tickfont=dict(color='#1a4d7c')
-        ),
+        title={
+            'text': 'T-Bill Yields Heatmap',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': dict(size=20, color='#1a4d7c')
+        },
+        xaxis=dict(title='Tenor', tickangle=45, tickfont=dict(size=11, color='#1a4d7c')),
+        yaxis=dict(title='Period', tickfont=dict(size=11, color='#1a4d7c')),
+        font=dict(family="Arial", size=12, color='#1a4d7c'),
+        coloraxis_colorbar=dict(title='Yield (%)', tickfont=dict(color='#1a4d7c'), titlefont=dict(color='#1a4d7c')),
         height=650,
         template='plotly_white'
     )
 
     st.plotly_chart(fig_heatmap, use_container_width=True)
+
 

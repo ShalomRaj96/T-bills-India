@@ -280,13 +280,12 @@ if not tbill_data_df.empty:
         if 'Period_Datetime' in heatmap_df.columns:
             heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-        fig_heatmap = px.imshow(
-            heatmap_df[tenor_cols],
-            labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-            aspect="auto",
-            color_continuous_scale='RdBu_r',
-            text_auto='.2f'
-        )
+       fig_heatmap = px.imshow(
+    heatmap_df[tenor_cols],
+    labels=dict(x="Tenor", y="Period", color="Yield (%)"),
+    aspect="auto",
+    color_continuous_scale='RdBu_r'
+)
 
         fig_heatmap.update_layout(
             title={

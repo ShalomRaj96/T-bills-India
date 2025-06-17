@@ -3,4 +3,3 @@ plotly
 plotly.express
 seaborn
 matplotlib
-matplotlib.pyplot 

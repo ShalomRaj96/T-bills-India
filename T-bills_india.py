@@ -311,6 +311,3 @@ with col2:
     )
 
     st.plotly_chart(fig_heatmap, use_container_width=True)
-
-else:
-    st.info("No T-Bills data available. Please ensure 'pd_dataframe_tbills.xlsx' exists and is correctly formatted.")

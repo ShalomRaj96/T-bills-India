@@ -3,3 +3,4 @@ plotly
 plotly.express
 seaborn
 matplotlib
+openpyxl

@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 
 # 1. Page config - MUST be the very first Streamlit command
 st.set_page_config(
@@ -17,14 +14,11 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* General app styling for background and font */
     .stApp {
         background-color: #f8fbfd;
         color: #1a4d7c;
         font-family: 'Arial', sans-serif;
     }
-
-    /* Adjust the header position */
     .stApp > header {
         width: 100%;
         background-color: #ffffff;
@@ -32,7 +26,6 @@ st.markdown(
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-top: -20px;
     }
-
     .stApp .main .block-container {
         width: 90%;
         max-width: 1200px;
@@ -40,13 +33,8 @@ st.markdown(
         background-color: #ffffff;
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        margin-top: 20px;
-        margin-bottom: 20px;
-        margin-left: auto;
-        margin-right: auto;
+        margin: 20px auto;
     }
-
-    /* Style for the main page title */
     h1 {
         color: #1a4d7c;
         text-align: center;
@@ -57,18 +45,13 @@ st.markdown(
         font-size: 2.5em;
         font-weight: 700;
     }
-
-    /* Styling for subheaders (H2) */
     h2 {
         color: #1a4d7c;
         margin-top: 25px;
         margin-bottom: 15px;
         font-weight: 600;
-        /* Unified font size for section headers for consistency. */
         font-size: 24px;
     }
-
-    /* Styling for H3 (titles for 3D and Heatmap sections) */
     h3 {
         color: #1a4d7c;
         margin-top: 0;
@@ -78,8 +61,6 @@ st.markdown(
         width: 100%;
         font-size: 20px;
     }
-
-    /* Improve Streamlit select slider appearance */
     .st-emotion-cache-1yr0343 {
         background-color: #d1e2f3 !important;
         height: 8px;
@@ -90,8 +71,6 @@ st.markdown(
         border: 2px solid #ffffff;
         box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-
-    /* Enhance Plotly chart containers */
     .streamlit-plotly-container {
         border: 1px solid #e0e0e0;
         border-radius: 10px;
@@ -104,8 +83,6 @@ st.markdown(
     .streamlit-plotly-container:hover {
         transform: translateY(-5px);
     }
-
-    /* Horizontal rule for section separation */
     hr {
         border: none;
         height: 2px;
@@ -116,7 +93,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 # --- Load Data ---
 @st.cache_data
@@ -179,7 +155,6 @@ if not tbill_data_df.empty:
             'xanchor': 'left',
             'y': 0.95,
             'yanchor': 'top',
-            # Unified font size for chart title to match section headers.
             'font': dict(size=24, color='#1a4d7c')
         },
         xaxis_title='Period',
@@ -214,9 +189,8 @@ if not tbill_data_df.empty:
     tenor_order = ['7 Day', '14 Day', '1 Month', '2 Month', '3 Month', '4 Month', '5 Month', '6 Month', '7 Month', '8 Month', '9 Month', '10 Month', '11 Month', '12 Month']
     long_df_chronological = long_df.sort_values(by='Period_Datetime')
     all_periods = long_df_chronological[period_column_name].unique().tolist()
-    
-    # FIX: Added columns to center the slider and reduce its length.
-    sl_col1, sl_col2, sl_col3 = st.columns([0.15, 0.7, 0.15]) # 15% margin on left/right
+
+    sl_col1, sl_col2, sl_col3 = st.columns([0.15, 0.7, 0.15])
 
     with sl_col2:
         selected_period = st.select_slider(
@@ -229,7 +203,7 @@ if not tbill_data_df.empty:
     filtered_df_for_slider = long_df_chronological[long_df_chronological[period_column_name] == selected_period].copy()
     filtered_df_for_slider['Tenor'] = pd.Categorical(filtered_df_for_slider['Tenor'], categories=tenor_order, ordered=True)
     filtered_df_for_slider = filtered_df_for_slider.sort_values(by='Tenor')
-    
+
     min_yield_current = filtered_df_for_slider['Yield'].min()
     max_yield_current = filtered_df_for_slider['Yield'].max()
     y_axis_min = min_yield_current - 0.2 if min_yield_current - 0.2 >= 0 else 0
@@ -297,45 +271,46 @@ if not tbill_data_df.empty:
         )
         st.plotly_chart(fig_3d, use_container_width=True)
 
+    with col2:
+        st.write("### T-Bill Yield Heatmap")
+        heatmap_df = tbill_data_df.copy()
+        heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
+        heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
+        heatmap_df.set_index(period_column_name, inplace=True)
+        if 'Period_Datetime' in heatmap_df.columns:
+            heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-with col2:
-    st.write("### T-Bill Yield Heatmap")
+        fig_heatmap = px.imshow(
+            heatmap_df[tenor_cols],
+            labels=dict(x="Tenor", y="Period", color="Yield (%)"),
+            aspect="auto",
+            color_continuous_scale='RdBu_r',
+            text_auto='.2f'
+        )
 
-    heatmap_df = tbill_data_df.copy()
-    heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
-    heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
-    heatmap_df.set_index(period_column_name, inplace=True)
-    if 'Period_Datetime' in heatmap_df.columns:
-        heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
+        fig_heatmap.update_layout(
+            title={
+                'text': 'Yield Heatmap',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': dict(size=20, color='#1a4d7c')
+            },
+            xaxis=dict(
+                title='Tenor',
+                tickangle=45,
+                tickfont=dict(size=11, color='#1a4d7c')
+            ),
+            yaxis=dict(
+                title='Period',
+                tickfont=dict(size=11, color='#1a4d7c')
+            ),
+            font=dict(family="Arial, sans-serif", size=12, color='#1a4d7c'),
+            height=650,
+            template='plotly_white',
+            margin=dict(l=30, r=30, t=60, b=60)
+        )
 
-    fig_heatmap = px.imshow(
-        heatmap_df[tenor_cols],
-        labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-        color_continuous_scale="RdBu_r",
-        aspect="auto"
-    )
+        st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    fig_heatmap.update_layout(
-        title="Yield Heatmap",
-        xaxis=dict(
-            title="Tenor",
-            tickangle=45,
-            tickfont=dict(size=10, color='#1a4d7c')
-        ),
-        yaxis=dict(
-            title="Period",
-            tickfont=dict(size=10, color='#1a4d7c')
-        ),
-        coloraxis_colorbar=dict(
-            title="Yield (%)",
-            tickfont=dict(color='#1a4d7c'),
-            titlefont=dict(size=12, color='#1a4d7c')
-        ),
-        font=dict(family="Arial, sans-serif", size=12, color='#1a4d7c'),
-        height=650,
-        margin=dict(t=50, b=50, l=50, r=50),
-        template='plotly_white'
-    )
-
-    st.plotly_chart(fig_heatmap, use_container_width=True)
-
+else:
+    st.info("No T-Bills data available. Please ensure 'pd_dataframe_tbills.xlsx' exists and is correctly formatted.")

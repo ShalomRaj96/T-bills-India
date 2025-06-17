@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
+import plotly.express as px
 
-# 1. Page config
 st.set_page_config(
     page_title="T-Bills India Analysis",
     layout="wide",
@@ -11,191 +10,143 @@ st.set_page_config(
 )
 
 # --- Custom CSS ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #f8fbfd;
-        color: #1a4d7c;
-        font-family: 'Arial', sans-serif;
-    }
-    .stApp > header {
-        width: 100%;
-        background-color: #ffffff;
-        padding: 10px 0;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        margin-top: -20px;
-    }
-    .stApp .main .block-container {
-        width: 90%;
-        max-width: 1200px;
-        padding: 30px;
-        background-color: #ffffff;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        margin-top: 20px;
-        margin-bottom: 20px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    h1 {
-        color: #1a4d7c;
-        text-align: center;
-        padding-top: 20px;
-        padding-bottom: 10px;
-        border-bottom: 4px solid #1a4d7c;
-        margin-bottom: 45px;
-        font-size: 2.5em;
-        font-weight: 700;
-    }
-    h2, h3 {
-        color: #1a4d7c;
-        font-weight: 600;
-    }
-    hr {
-        border: none;
-        height: 2px;
-        background-image: linear-gradient(to right, #a8d5f2, #e0e0e0, #a8d5f2);
-        margin: 40px 0;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+.stApp {
+    background-color: #f8fbfd;
+    color: #1a4d7c;
+    font-family: 'Arial', sans-serif;
+}
+h1, h2, h3 {
+    color: #1a4d7c;
+}
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    padding-bottom: 10px;
+    border-bottom: 4px solid #1a4d7c;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# --- Load Data ---
 @st.cache_data
-def load_data(file_path):
+def load_data(path):
     try:
-        return pd.read_excel(file_path)
+        return pd.read_excel(path)
     except Exception as e:
-        st.error(f"Error loading file: {e}")
+        st.error(f"Error loading data: {e}")
         return pd.DataFrame()
 
 df = load_data("pd_dataframe_tbills.xlsx")
 
-# --- Main Title ---
 st.title("T-Bills India Yield Analysis")
 
 if not df.empty:
     period_col = df.columns[0]
     df['Period_Datetime'] = pd.to_datetime(df[period_col], format='%b %y', errors='coerce')
-    df = df.sort_values('Period_Datetime')
     tenor_cols = [col for col in df.columns if col not in [period_col, 'Period_Datetime']]
+    long_df = df.melt(id_vars=[period_col, 'Period_Datetime'], value_vars=tenor_cols,
+                      var_name='Tenor', value_name='Yield')
 
-    long_df = df.melt(
-        id_vars=[period_col, 'Period_Datetime'],
-        value_vars=tenor_cols,
-        var_name='Tenor',
-        value_name='Yield'
-    )
-
-    # --- Time Series Plot ---
+    # --- Historical Line Chart ---
     fig = go.Figure()
-    colors = px.colors.qualitative.Plotly
     for i, tenor in enumerate(tenor_cols):
-        temp = long_df[long_df['Tenor'] == tenor]
+        sub_df = long_df[long_df['Tenor'] == tenor].sort_values('Period_Datetime')
         fig.add_trace(go.Scatter(
-            x=temp[period_col],
-            y=temp['Yield'],
-            mode='markers',
+            x=sub_df[period_col], y=sub_df['Yield'],
+            mode='markers+lines',
             name=tenor,
-            marker=dict(size=7, opacity=0.8, color=colors[i % len(colors)]),
-            line=dict(width=2, color=colors[i % len(colors)]),
-            customdata=temp[period_col],
-            hovertemplate=f'<b>{tenor}</b><br>Period: %{{customdata}}<br>Yield: %{{y:.2f}}%<extra></extra>'
+            line=dict(color=px.colors.qualitative.Plotly[i % 10]),
+            marker=dict(size=6)
         ))
 
     fig.update_layout(
-        title=dict(text="T-Bill Rates Over Time by Tenor", x=0.01, xanchor="left", font=dict(size=24, color='#1a4d7c')),
-        xaxis_title='Period', yaxis_title='Yield (%)',
-        template='plotly_white',
-        font=dict(family='Arial', size=12, color='#1a4d7c'),
-        height=500,
-        legend=dict(orientation="h", y=-0.3)
+        title="T-Bill Rates Over Time by Tenor",
+        xaxis_title="Period",
+        yaxis_title="Yield (%)",
+        template="plotly_white",
+        font=dict(color='#1a4d7c'),
+        xaxis=dict(tickangle=45)
     )
     st.plotly_chart(fig, use_container_width=True)
+
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # --- Slider Yield Curve ---
+    # --- Interactive Yield Curve ---
     st.subheader("Interactive T-Bill Yield Curve Evolution")
-    tenor_order = ['7 Day', '14 Day', '1 Month', '2 Month', '3 Month', '4 Month', '5 Month',
-                   '6 Month', '7 Month', '8 Month', '9 Month', '10 Month', '11 Month', '12 Month']
+    tenor_order = ['7 Day', '14 Day', '1 Month', '2 Month', '3 Month', '4 Month',
+                   '5 Month', '6 Month', '7 Month', '8 Month', '9 Month',
+                   '10 Month', '11 Month', '12 Month']
 
-    all_periods = long_df[period_col].unique().tolist()
-    selected = st.select_slider("Select Period:", options=all_periods, value=all_periods[-1])
+    periods = long_df[period_col].dropna().unique().tolist()
+    selected_period = st.select_slider("Select Period", options=periods, value=periods[-1])
+    filtered = long_df[long_df[period_col] == selected_period]
+    filtered['Tenor'] = pd.Categorical(filtered['Tenor'], categories=tenor_order, ordered=True)
+    filtered = filtered.sort_values('Tenor')
 
-    df_slider = long_df[long_df[period_col] == selected].copy()
-    df_slider['Tenor'] = pd.Categorical(df_slider['Tenor'], categories=tenor_order, ordered=True)
-    df_slider = df_slider.sort_values('Tenor')
-
-    fig_curve = go.Figure(go.Scatter(
-        x=df_slider['Tenor'], y=df_slider['Yield'],
+    fig_curve = go.Figure()
+    fig_curve.add_trace(go.Scatter(
+        x=filtered['Tenor'], y=filtered['Yield'],
         mode='lines+markers',
         line=dict(color='#1a4d7c', width=3),
-        marker=dict(color='#1a4d7c', size=9, symbol='circle')
+        marker=dict(size=8)
     ))
     fig_curve.update_layout(
-        title=dict(text=f"T-Bill Yield Curve for {selected}", x=0.5, font=dict(size=20, color='#1a4d7c')),
-        xaxis_title='Tenor', yaxis_title='Yield (%)',
-        template='plotly_white',
-        height=550,
-        font=dict(family='Arial', size=12, color='#1a4d7c'),
-        xaxis=dict(categoryorder='array', categoryarray=tenor_order)
+        title=f"T-Bill Yield Curve for {selected_period}",
+        xaxis_title="Tenor",
+        yaxis_title="Yield (%)",
+        template="plotly_white",
+        font=dict(color='#1a4d7c')
     )
     st.plotly_chart(fig_curve, use_container_width=True)
+
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # --- 3D & Heatmap ---
+    # --- 3D Surface Plot ---
     st.subheader("Yield Curve Dynamics (3D & Heatmap)")
     col1, col2 = st.columns(2)
 
     with col1:
         st.write("### 3D T-Bill Yield Surface")
-        z_vals = df[tenor_cols].values
-        fig3d = go.Figure(data=[go.Surface(
-            z=z_vals,
-            x=tenor_cols,
-            y=df[period_col],
-            colorscale='RdBu_r',
-            showscale=False
-        )])
+        z = df.sort_values('Period_Datetime')[tenor_cols].values
+        y = df.sort_values('Period_Datetime')[period_col]
+        x = tenor_cols
+
+        fig3d = go.Figure(data=[go.Surface(z=z, x=x, y=y, colorscale='RdBu_r')])
         fig3d.update_layout(
             scene=dict(
-                xaxis_title='Tenor', yaxis_title='Period', zaxis_title='Yield (%)',
-                xaxis=dict(tickfont=dict(color='#1a4d7c')),
-                yaxis=dict(tickfont=dict(color='#1a4d7c')),
-                zaxis=dict(tickfont=dict(color='#1a4d7c'))
+                xaxis_title='Tenor',
+                yaxis_title='Period',
+                zaxis_title='Yield (%)'
             ),
-            height=650,
-            font=dict(family='Arial', color='#1a4d7c')
+            height=600,
+            margin=dict(l=10, r=10, b=10, t=30)
         )
         st.plotly_chart(fig3d, use_container_width=True)
 
-with col2:
-        st.write("### Heatmap of T-Bill Yields")
-        heatmap_df = df.copy()
-        heatmap_df = heatmap_df.drop(columns=['Period_Datetime'], errors='ignore')
-        heatmap_df.set_index(period_col, inplace=True)
-        heatmap_df = heatmap_df[tenor_cols]
+    # --- Plotly Heatmap (Replaces seaborn) ---
+    with col2:
+        st.write("### T-Bill Yield Heatmap")
+        heat_df = df.copy()
+        heat_df['Period_Datetime'] = pd.to_datetime(heat_df[period_col], format='%b %y', errors='coerce')
+        heat_df = heat_df.sort_values('Period_Datetime')
+        heat_df = heat_df.set_index(period_col)
 
-        fig_heatmap = px.imshow(
-            heatmap_df.values,
+        fig_hm = px.imshow(
+            heat_df[tenor_cols],
             labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-            x=tenor_cols,
-            y=heatmap_df.index.tolist(),
             aspect="auto",
-            color_continuous_scale='RdBu_r',
+            color_continuous_scale="RdBu_r"
         )
-
-        fig_heatmap.update_layout(
-            title=dict(text="T-Bill Yield Heatmap", x=0.5, font=dict(size=20, color='#1a4d7c')),
-            xaxis_title="Tenor", yaxis_title="Period",
-            font=dict(family="Arial", size=12, color='#1a4d7c'),
-            template='plotly_white',
-            height=650
+        fig_hm.update_layout(
+            font=dict(color="#1a4d7c"),
+            xaxis=dict(tickangle=45),
+            margin=dict(l=10, r=10, t=30, b=10)
         )
+        st.plotly_chart(fig_hm, use_container_width=True)
 
-        st.plotly_chart(fig_heatmap, use_container_width=True)
+else:
+    st.warning("Data file not found or is empty.")
+
 
 

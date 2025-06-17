@@ -298,7 +298,7 @@ if not tbill_data_df.empty:
         st.plotly_chart(fig_3d, use_container_width=True)
 
 
-    with col2:
+with col2:
     st.write("### T-Bill Yield Heatmap")
 
     heatmap_df = tbill_data_df.copy()
@@ -339,5 +339,3 @@ if not tbill_data_df.empty:
 
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-else:
-    st.info("No T-Bills data available. Please ensure 'pd_dataframe_tbills.xlsx' exists and is correctly formatted.")

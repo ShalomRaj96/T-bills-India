@@ -299,41 +299,45 @@ if not tbill_data_df.empty:
 
 
     with col2:
-        st.write("### T-Bill Yield Heatmap")
-        heatmap_df = tbill_data_df.copy()
-        heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
-        heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
-        heatmap_df.set_index(period_column_name, inplace=True)
-        if 'Period_Datetime' in heatmap_df.columns:
-            heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
+    st.write("### T-Bill Yield Heatmap")
 
-        plt.figure(figsize=(10, 10))
-        ax_heatmap = sns.heatmap(
-            heatmap_df[tenor_cols],
-            cmap="RdBu_r",
-            annot=False,
-            fmt=".2f",
-            linewidths=0.7,
-            linecolor="white",
-            cbar=True,
-            cbar_kws={"label": "Yield (%)", "orientation": "vertical", "shrink": 1, "pad": 0.1}
-        )
+    heatmap_df = tbill_data_df.copy()
+    heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
+    heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
+    heatmap_df.set_index(period_column_name, inplace=True)
+    if 'Period_Datetime' in heatmap_df.columns:
+        heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-        ax = plt.gca()
-        ax.tick_params(axis='x', labelsize=10, rotation=45, colors='#1a4d7c')
-        ax.tick_params(axis='y', labelsize=10, rotation=0, colors='#1a4d7c')
-        plt.xlabel("Tenor", fontsize=14, color='#1a4d7c')
-        plt.ylabel("Period", fontsize=14, color='#1a4d7c')
-        
-        cbar = ax_heatmap.collections[0].colorbar
-        cbar.ax.set_ylabel('Yield (%)', color='#1a4d7c', fontsize=14)
-        cbar.ax.tick_params(colors='#1a4d7c')
-        
-        plt.tight_layout()
-        st.pyplot(plt)
-        plt.clf()
-        plt.close()
+    fig_heatmap = px.imshow(
+        heatmap_df[tenor_cols],
+        labels=dict(x="Tenor", y="Period", color="Yield (%)"),
+        color_continuous_scale="RdBu_r",
+        aspect="auto"
+    )
 
+    fig_heatmap.update_layout(
+        title="Yield Heatmap",
+        xaxis=dict(
+            title="Tenor",
+            tickangle=45,
+            tickfont=dict(size=10, color='#1a4d7c')
+        ),
+        yaxis=dict(
+            title="Period",
+            tickfont=dict(size=10, color='#1a4d7c')
+        ),
+        coloraxis_colorbar=dict(
+            title="Yield (%)",
+            tickfont=dict(color='#1a4d7c'),
+            titlefont=dict(size=12, color='#1a4d7c')
+        ),
+        font=dict(family="Arial, sans-serif", size=12, color='#1a4d7c'),
+        height=650,
+        margin=dict(t=50, b=50, l=50, r=50),
+        template='plotly_white'
+    )
+
+    st.plotly_chart(fig_heatmap, use_container_width=True)
 
 else:
     st.info("No T-Bills data available. Please ensure 'pd_dataframe_tbills.xlsx' exists and is correctly formatted.")

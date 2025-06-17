@@ -272,44 +272,44 @@ if not tbill_data_df.empty:
         st.plotly_chart(fig_3d, use_container_width=True)
 
     with col2:
-    st.write("### T-Bill Yield Heatmap")
-    heatmap_df = tbill_data_df.copy()
-    heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
-    heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
-    heatmap_df.set_index(period_column_name, inplace=True)
-    if 'Period_Datetime' in heatmap_df.columns:
+        st.write("### T-Bill Yield Heatmap")
+        heatmap_df = tbill_data_df.copy()
+        heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
+        heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
+        heatmap_df.set_index(period_column_name, inplace=True)
+        if 'Period_Datetime' in heatmap_df.columns:
         heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-    fig_heatmap = px.imshow(
-        heatmap_df[tenor_cols],
-        labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-        aspect="auto",
-        color_continuous_scale='RdBu_r'
-    )
+        fig_heatmap = px.imshow(
+            heatmap_df[tenor_cols],
+            labels=dict(x="Tenor", y="Period", color="Yield (%)"),
+            aspect="auto",
+            color_continuous_scale='RdBu_r'
+        )
 
-    fig_heatmap.update_layout(
-        title={
-            'text': 'Yield Heatmap',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': dict(size=20, color='#1a4d7c')
-        },
-        xaxis=dict(
-            title='Tenor',
-            tickangle=45,
-            tickfont=dict(size=11, color='#1a4d7c')
+            fig_heatmap.update_layout(
+            title={
+                'text': 'Yield Heatmap',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': dict(size=20, color='#1a4d7c')
+            },
+            xaxis=dict(
+                title='Tenor',
+                tickangle=45,
+                tickfont=dict(size=11, color='#1a4d7c')
         ),
-        yaxis=dict(
-            title='Period',
-            tickfont=dict(size=11, color='#1a4d7c')
-        ),
-        font=dict(family="Arial, sans-serif", size=12, color='#1a4d7c'),
-        height=650,
-        template='plotly_white',
-        margin=dict(l=30, r=30, t=60, b=60)
-    )
+            yaxis=dict(
+                title='Period',
+                tickfont=dict(size=11, color='#1a4d7c')
+            ),
+            font=dict(family="Arial, sans-serif", size=12, color='#1a4d7c'),
+            height=650,
+            template='plotly_white',
+            margin=dict(l=30, r=30, t=60, b=60)
+        )
 
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+        st.plotly_chart(fig_heatmap, use_container_width=True)
 
 else:
     st.info("No T-Bills data available. Please ensure 'pd_dataframe_tbills.xlsx' exists and is correctly formatted.")

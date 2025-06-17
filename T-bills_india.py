@@ -172,31 +172,44 @@ if not df.empty:
         )
         st.plotly_chart(fig3d, use_container_width=True)
 
-    with col2:
-        st.write("### T-Bill Yield Heatmap")
-        heatmap_df = df.copy()
-        heatmap_df.set_index(period_col, inplace=True)
-        heatmap_df = heatmap_df[tenor_cols]
+with col2:
+    st.write("### T-Bill Yield Heatmap (Interactive)")
+    heatmap_df = tbill_data_df.copy()
+    heatmap_df['Period_Datetime'] = pd.to_datetime(heatmap_df[period_column_name], format='%b %y', errors='coerce')
+    heatmap_df = heatmap_df.sort_values(by='Period_Datetime')
+    heatmap_df.set_index(period_column_name, inplace=True)
+    if 'Period_Datetime' in heatmap_df.columns:
+        heatmap_df = heatmap_df.drop(columns=['Period_Datetime'])
 
-        fig_heatmap = px.imshow(
-            heatmap_df.values,
-            x=tenor_cols,
-            y=heatmap_df.index,
-            labels=dict(x="Tenor", y="Period", color="Yield (%)"),
-            color_continuous_scale='RdBu_r'
-        )
-        fig_heatmap.update_traces(
-            hovertemplate='<b>Tenor:</b> %{x}<br><b>Period:</b> %{y}<br><b>Yield:</b> %{z:.2f}%<extra></extra>'
-        )
-        fig_heatmap.update_layout(
-            font=dict(family="Arial", size=12, color='#1a4d7c'),
-            xaxis=dict(tickangle=45, tickfont=dict(color='#1a4d7c')),
-            yaxis=dict(tickfont=dict(color='#1a4d7c')),
-            coloraxis_colorbar=dict(title='Yield (%)', titlefont=dict(color='#1a4d7c'), tickfont=dict(color='#1a4d7c')),
-            height=650,
-            template='plotly_white'
-        )
-        st.plotly_chart(fig_heatmap, use_container_width=True)
+    fig_heatmap = px.imshow(
+        heatmap_df[tenor_cols],
+        labels=dict(x="Tenor", y="Period", color="Yield (%)"),
+        x=tenor_cols,
+        y=heatmap_df.index.tolist(),
+        color_continuous_scale="RdBu_r",
+        aspect="auto"
+    )
+
+    fig_heatmap.update_layout(
+        title=dict(
+            text="T-Bill Yield Heatmap",
+            font=dict(size=20, color='#1a4d7c'),
+            x=0.5,
+            xanchor='center'
+        ),
+        font=dict(family="Arial", size=12),
+        xaxis=dict(tickangle=45, tickfont=dict(color='#1a4d7c')),
+        yaxis=dict(tickfont=dict(color='#1a4d7c')),
+        coloraxis_colorbar=dict(
+            title='Yield (%)',
+            titlefont=dict(color='#1a4d7c'),
+            tickfont=dict(color='#1a4d7c')
+        ),
+        height=650,
+        template='plotly_white'
+    )
+
+    st.plotly_chart(fig_heatmap, use_container_width=True)
 
 else:
     st.info("No T-Bills data available. Please ensure the Excel file is present and correct.")
